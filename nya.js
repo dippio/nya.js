@@ -1,11 +1,10 @@
 // nya.js ~ javascript neko
 // by tyler / dippio
-// v0.1
+// v0.5
 //
 // TODO: actually finish the script - contains core functionality, but not much more
 //       need to implement animations, very boring atm.
 //       maybe implement bounding box around the neko to make her easier to click
-//       make her draggable?
 
 
 
@@ -21,6 +20,8 @@ let mouseY = 0;
 
 var isNekoActive = 1;
 var isNekoClicked = 0;
+var isNekoDrag = 0;
+let isMouseDown = 0;
 
 let lastMoveTime = 0;
 let frameCount = 0;
@@ -42,7 +43,12 @@ let nekoYPos = windowHeight / 2;
 // neko sprites
 // idle / misc
 const awake = "data:image/png;base64,AAABAAEAICAQAAAAAADoAgAAFgAAACgAAAAgAAAAQAAAAAEABAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAACAAAAAgIAAgAAAAIAAgACAgAAAwMDAAICAgAAAAP8AAP8AAAD//wD/AAAA/wD/AP//AAD///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA///w/wAP8P//8AAAAAAAAAD/8P/w//D/8AAAAAAAAAD///D/8P/w///wAAAAAAAA//8A//D/8A//8AAAAAAAAA/wD//w//8A/wAAAAAAAAAAAA//////DwAAAAAAAAAAAAAP/////w/wAAAAAAAAAAAAAP////AA/wAAAAAAAAAAAAAP//8AAA/wAAAAAAAAAAAAAP/wAAAA8AAAAAAAAAAAAAD/8AAAAAAAAAAAAAAAAA//////AAAAAAAAAAAAAAD///////AAAAAAAAAAAAAPAA/w/wAPAAAAAAAAAAAAD////////wAAAAAAAAAAAA//D///D/8AAAAAAAAAAAAP/w///w//AAAAAAAAAAAAD/8P//8P/wAAAAAAAAAAAA////////8AAAAAAAAAAAAP//8AD///AAAAAAAAAAAAAP//AA//8AAAAAAAAAAAAAD/8AAA//AAAAAAAAAAAAAAD/AAAP8AAAAAAAAAAAAAAA8AAAAPAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD////////////////4AIAP+AAAD/wAAB/8AAAf/AAAH/4AAD//IAB//+AAf//wBD//+A4f//wfH//wB7//4AP//8AB//+AAP//gAD//4AA/w+AAOH/gAD//4AA//mAAJ/nwIHnn8HB+f9hw//+4+N//ff3v/v//9///////////w=="
+const drag = "data:image/gif;base64,R0lGODlhIAAgAHAAACH5BAEAAAMALAAAAAAgACAAgQAAAP///xoaGgAAAAKRnI8wigvcYnwugQANlTyF/ygP1h3UtnzqCJbmYqry1bqTPNd2Q+Pzbun5dLbTEMfISCChnpOkLLEwoBUm6hJWq1gp9UgsrrRU1O7ZHANjw+aafexmwau3Jl5/k8tOPZ4lt/TXd0ZnRFIIdiGCOGeIGAhnGOlBp5Z4tcdVRMOUNtYoGGYxFtgpNtogsLqz6tpRAAA7"
+
+
 // directional
+// maybe convert all of them to gif in the future
+// seems to be more efficient
 const up1 = "data:image/png;base64,AAABAAEAICAQAAAAAADoAgAAFgAAACgAAAAgAAAAQAAAAAEABAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAACAAAAAgIAAgAAAAIAAgACAgAAAwMDAAICAgAAAAP8AAP8AAAD//wD/AAAA/wD/AP//AAD///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/wAAAAAAAAAAAAAAAAAAAP8AAAAAAAAAAAAAAAAAAAD/AAAAAAAAAAAAAAAAAAAA/wAAAAAAAAAAAAAAAAAAAP8AAAAAAAAAAAAAAAAA//////8AAAAAAAAAAAAA/////////wAAAAAAAAAAD//////////wAAAAAAAAAA//////////8AAAAAAAAAAP//////////AAAAAAAAAAD//////////wAAAAAAAAAP///////////wAAAAAAAADw/////////w8AAAAAAAAA/w////////D/AAAAAAAAAP8P///////w/wAAAAAAAAAP8P//////D/AAAAAAAAAAAAAAD//wAAAAAAAAAAAAAAAA//////8AAAAAAAAAAAAAAAD///AAAAAAAAAAAAAAAA//D/8P//AAAAAAAAAAAAD/////////AAAAAAAAAAAAAAD///8AAAAAAAAAAAAAAP////////8AAAAAAAAAAAAP/w//8P/wAAAAAAAAAAAAD/8P//D/8AAAAAAAAAAAAAD/D//w/wAAAAAAAAAAAAAAD/////AAAAAAAAAAAAAAAAAP//AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD////////////+f////D////w////8P////D///+AH//+AAf//AAD//gAAf/4AAH/+AAB//gAAf/wAAD/8AAA//AAAP/wAAD/8AAA//gAAf/+AAf//gAH//4AB//8AAP//AAD//wAA//+AAf//gAH//4AB///gB///gAH///w//w=="
 const up2 = "data:image/png;base64,AAABAAEAICAQAAAAAADoAgAAFgAAACgAAAAgAAAAQAAAAAEABAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAACAAAAAgIAAgAAAAIAAgACAgAAAwMDAAICAgAAAAP8AAP8AAAD//wD/AAAA/wD/AP//AAD///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/wAAAAAA/wAAAAAAAAAAAP/wAAAAD/8AAAAAAAAAAAD//wAAAP//AAAAAAAAAAAA///wAA///wAAAAAAAAAAD///8AAP///wAAAAAAAAAA//////////8AAAAAAAAAAP///w/w////AAAAAAAAAAD///8P8P///wAAAAAAAAAA////D/D///8AAAAAAAAAAP///w/w////AAAAAAAAAAD///8P8P///wAAAAAAAAAAD///D/D///AAAAAAAAAAAAD///AP//8AAAAAAAAAAAAPAP////8A8AAAAAAAAAAAD/////////AAAAAAAAAAAP//////////AAAAAAAAAAD/8AD//wAP/wAAAAAAAAAA/w//////8P8AAAAAAAAAAPAAD///AAAPAAAAAAAAAA/w//D/8P//D/AAAAAAAAAPD/////////DwAAAAAAAADwAAD///8AAA8AAAAAAAAA8P////////8PAAAAAAAAAP8P/w//8P/w/wAAAAAAAAD/D/8P//D/8P8AAAAAAAAA/wD/D//w/wD/AAAAAAAAAPAPD/////DwDwAAAAAAAAAAAAAP//AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD///////////+f+f//D/D//wfg//8DwP//AYD//gAAf/4AAH/+AAB//gAAf/4AAH/+AAB//gAAf/8AAP//AAD//wAA//8AAP/+AAB//gAAf/4AAH/+AAB//AAAP/wAAD/8AAA//AAAP/wAAD/8AAA//AAAP/wAAD/+AAB///w//w=="
 const upRight1 = "data:image/png;base64,AAABAAEAICAQAAAAAADoAgAAFgAAACgAAAAgAAAAQAAAAAEABAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAACAAAAAgIAAgAAAAIAAgACAgAAAwMDAAICAgAAAAP8AAP8AAAD//wD/AAAA/wD/AP//AAD///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD//wAAAAAAAAD/AAAAAA///wAAAAAAAAAA/wAA/w//8ADwAAAAAAAAAA/wAA8P//8A/wAAAAAAAAAA/w/wD///8A8AAAAAAAAAAP////////8A/wAAAAAAAAAP////////8P8AAAAAAAAAD/////////D/8AAAAAAAAP/////////wD/AAAAAAAAD/////////8P/wAAAAAAAA////////8A//8AAAAAAAAP////////////8AAAAAAAAP////////////AAAAAAAAAP///////////wAAAAAAAAD///////////8AAAAAAAAAD///////////8AAAAAAAAAD////////////wAAAAAAAAAA///w//////8AAAAAAAAAAAAAD///////8AAAAAAAAAAAAP////////AAAAAAAAAAAAD//w/////wAAAAAAAAAAAA//8P//D/8AAAAAAAAAAAAP//D/8P/wAAAAAAAAAAAAD//w/w8AAAAAAAAAAAAAAA//AAD//wAAAAAAAAAAAAAP8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD///////////////////////wP/5/gD/8MAA//BAAP/4AAD/+AAAf/wAAD/8AAA//AAAH/wAAB/8AAAf/AAAD/wAAA/+AAAP/wAAD/8AAA//gAAD/8AAAf/gAAH//AAA//+AAP//gAD//4AAf/+AAJ//gAH//4AD//+AB///j//w=="
@@ -60,12 +66,20 @@ const down2 = "data:image/png;base64,AAABAAEAICAQAAAAAADoAgAAFgAAACgAAAAgAAAAQAA
 const nekoDiv = document.createElement("div");
 nekoDiv.id = "nekoDiv";
 nekoDiv.style.position = "absolute";
+nekoDiv.setAttribute("draggable", false); // stops transparent duplicate when dragging
 nekoDiv.style.left = nekoXPos;
 nekoDiv.style.top = nekoYPos;
+nekoDiv.style.webkitTouchCallout = "none"; // stops blue outline when dragging.
+nekoDiv.style.webkitUserSelect = "none";   // i think it applies these for the
+nekoDiv.style.khtmlUserSelect = "none";    // entire site, which i don't really
+nekoDiv.style.mozUserSelect = "none";      // like doing, but alas
+nekoDiv.style.msUserSelect = "none";
+nekoDiv.style.userSelect = "none";
 
 // injects the innitial neko sprite
 const nekoSprite = document.createElement("img");
 nekoSprite.src = awake;
+nekoSprite.setAttribute("draggable", false);
 nekoDiv.appendChild(nekoSprite);
 document.body.appendChild(nekoDiv);
 
@@ -79,7 +93,7 @@ function getCursorPos(event) {
 }
 
 // makes the neko movement togelable (so it isnt constantly following)
-nekoDiv.addEventListener('click', function() {
+nekoDiv.addEventListener("click", function() {
   isNekoClicked = isNekoClicked ? 0 : 1;
 });
 
@@ -91,6 +105,9 @@ function getDist(mouseX, mouseY) {
   return Math.sqrt(distX*distX + distY*distY); // should return total euclid dist assuming i dont suck at maths
 }
 
+function getAngle() {
+  return Math.atan2(mouseY - nekoYPos, mouseX - nekoXPos); // cool inverse triangle math
+}
 
 
 // SPRITES / ANIMATION
@@ -159,13 +176,12 @@ function nekoMove() {
     nekoActiveMisc(dist, update, angle);
   }
 
-  requestAnimationFrame(nekoMove);
+  
+  if (isNekoDrag == 0) { // stops issue with teleporting after dragging
+    requestAnimationFrame(nekoMove); 
+  }
 }
 
-
-function getAngle() {
-  return Math.atan2(mouseY - nekoYPos, mouseX - nekoXPos);
-}
 
 function getNewPos(angle) {
   let updateX = nekoXPos + Math.cos(angle) * nekoSpeed;
@@ -180,7 +196,7 @@ function nekoActiveMisc(dist, update, angle) {
     isNekoActive = 1;
   }
 
-  if (isNekoActive == 1 && isNekoClicked == 0) {
+  if (isNekoActive == 1 && isNekoClicked == 0 && isNekoDrag == 0) {
     nekoXPos = update.updateX;
     nekoYPos = update.updateY;
     nekoDiv.style.left = nekoXPos + "px";
@@ -192,3 +208,36 @@ function nekoActiveMisc(dist, update, angle) {
     idle();
   }
 }
+
+
+// my biggest issue with the original neko (or atleast the most popular js implenentation)
+// is the lack of an ability to drag the neko to a specific spot on screen
+// so this is more of a personal quality of life thing
+// staying too faithful to the original would be pretty boring, :3c
+function dragNeko(event) {
+  if(isMouseDown) {
+    let boundBox = nekoDiv.getBoundingClientRect();
+    if(event.clientX > boundBox.left && event.clientX < boundBox.right && event.clientY > boundBox.top && event.clientY < boundBox.bottom) {
+      isNekoDrag = 1;
+    }
+  }
+  if(isNekoDrag) {
+    nekoXPos = event.clientX - 15; // offset by 15 pixels because otherwise its outside the mouses bounding box lol
+    nekoYPos = event.clientY - 15;
+    nekoDiv.style.left = nekoXPos + "px";
+    nekoDiv.style.top = nekoYPos + "px";
+    nekoSprite.src = drag; // could probably use the nekoXPos and mouseX to determine which direction it should face
+  }                        // im a bit lazy though
+}
+
+document.addEventListener("mousedown", function() {
+  isMouseDown = 1;
+});
+
+document.addEventListener("mouseup", function() {
+  isMouseDown = 0;
+  isNekoDrag = 0;
+  nekoMove(); // makes neko move again on mouseup (assuming she isn't already manually sat down)
+});
+
+document.addEventListener("mousemove", dragNeko);
