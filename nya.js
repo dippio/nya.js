@@ -5,6 +5,7 @@
 // TODO: actually finish the script - contains core functionality, but not much more
 //       need to implement animations, very boring atm.
 //       maybe implement bounding box around the neko to make her easier to click
+//       lots of
 
 
 
@@ -12,23 +13,24 @@
 
 // DEFINITIONS
 
-const windowHeight = window.innerHeight;
-const windowWidth = window.innerWidth;
-
 let mouseX = 0;
 let mouseY = 0;
+let lastMouseX = 0; 
 
 var isNekoActive = 1;
 var isNekoClicked = 0;
 var isNekoDrag = 0;
+var isNekoIdle = 0;
 let isMouseDown = 0;
 
 let lastMoveTime = 0;
+let lastFrameTime = 0;
 let frameCount = 0;
 let frameCounter = 0;
 
-// variables for movement and positioning
-// adjust these to taste
+let currentTime = Date.now();
+let passedTime = currentTime - lastMoveTime;
+
 // movement stuff
 let nekoSpeed = 16; // got this value from neko98 source, seems to work nicely
 let tick = 250; // all movements occur every 250ms(?)
@@ -36,14 +38,18 @@ let maxDist = 32; // max distance before the cat starts trying to chase the curs
                   // seems to be easier for the neko to exit then to enter the max distance
 
 // set spawn positions
-let nekoXPos = windowWidth / 2; // middle of screen for testing purposes
-let nekoYPos = windowHeight / 2;
+let nekoXPos = window.innerWidth / 2; // middle of screen for testing purposes
+let nekoYPos = window.innerHeight / 2;
 
 
 // neko sprites
 // idle / misc
+const idle = "data:image/x-icon;base64,AAABAAEAICAQAAAAAADoAgAAFgAAACgAAAAgAAAAQAAAAAEABAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAACAAAAAgIAAgAAAAIAAgACAgAAAwMDAAICAgAAAAP8AAP8AAAD//wD/AAAA/wD/AP//AAD///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA///w/wAP8P//8P//AAAAAAD/8P/w//D/8AAAAAAAAAD///D/8P/w///wAAAAAAAA//8A//D/8A//8AAAAAAAAA/wD//w//8A/wAAAAAAAAAAAA//////AAAAAAAAAAAAAAAP/////wAAAAAAAAAAAAAAAP////AAAAAAAAAAAAAAAAAP//8AAAAAAAAAAAAAAAAAAP/wAAAAAAAAAAAAAAAAAAD/8AAAAAAAAAAAAAAAAA//////AAAAAAAAAAAAAAD///////AAAAAAAAAAAAAPAA/w/wAPAAAAAAAAAAAAD////////wAAAAAAAAAAAA//D///D/8AAAAAAAAAAAAP/w///w//AAAAAAAAAAAAD/8P//8P/wAAAAAAAAAAAA////////8AAAAAAAAAAAAP//8AD///AAAAAAAAAAAAAP//AA//8AAAAAAAAAAAAAD/8AAA//AAAAAAAAAAAAAAD/AAAP8AAAAAAAAAAAAAAA8AAAAPAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD////////////////4AIAB+AAAAPwAAAH8AAAf/AAAH/4AAD//IAJ//+AD///wB///+A////wf///wB///4AP//8AB//+AAP//gAD//4AA//+AAP//gAD//4AA//+AAP//wIH//8HB///hw///4+P///f3/////////////////w=="
 const awake = "data:image/png;base64,AAABAAEAICAQAAAAAADoAgAAFgAAACgAAAAgAAAAQAAAAAEABAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAACAAAAAgIAAgAAAAIAAgACAgAAAwMDAAICAgAAAAP8AAP8AAAD//wD/AAAA/wD/AP//AAD///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA///w/wAP8P//8AAAAAAAAAD/8P/w//D/8AAAAAAAAAD///D/8P/w///wAAAAAAAA//8A//D/8A//8AAAAAAAAA/wD//w//8A/wAAAAAAAAAAAA//////DwAAAAAAAAAAAAAP/////w/wAAAAAAAAAAAAAP////AA/wAAAAAAAAAAAAAP//8AAA/wAAAAAAAAAAAAAP/wAAAA8AAAAAAAAAAAAAD/8AAAAAAAAAAAAAAAAA//////AAAAAAAAAAAAAAD///////AAAAAAAAAAAAAPAA/w/wAPAAAAAAAAAAAAD////////wAAAAAAAAAAAA//D///D/8AAAAAAAAAAAAP/w///w//AAAAAAAAAAAAD/8P//8P/wAAAAAAAAAAAA////////8AAAAAAAAAAAAP//8AD///AAAAAAAAAAAAAP//AA//8AAAAAAAAAAAAAD/8AAA//AAAAAAAAAAAAAAD/AAAP8AAAAAAAAAAAAAAA8AAAAPAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD////////////////4AIAP+AAAD/wAAB/8AAAf/AAAH/4AAD//IAB//+AAf//wBD//+A4f//wfH//wB7//4AP//8AB//+AAP//gAD//4AA/w+AAOH/gAD//4AA//mAAJ/nwIHnn8HB+f9hw//+4+N//ff3v/v//9///////////w=="
+const yawn = "data:image/x-icon;base64,AAABAAEAICAQAAAAAADoAgAAFgAAACgAAAAgAAAAQAAAAAEABAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAACAAAAAgIAAgAAAAIAAgACAgAAAwMDAAICAgAAAAP8AAP8AAAD//wD/AAAA/wD/AP//AAD///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA///w/wAP8P//8P//AAAAAAD/8P/w//D/8AAAAAAAAAD///D/8P/w///wAAAAAAAA//8A//D/8A//8AAAAAAAAA/wD//w//8A/wAAAAAAAAAAAA//////AAAAAAAAAAAAAAAP/////wAAAAAAAAAAAAAAAP////AAAAAAAAAAAAAAAAAP//8AAAAAAAAAAAAAAAAAAP/wAAAAAAAAAAAAAAAAAAD/8AAAAAAAAAAAAAAAAA//AP//AAAAAAAAAAAAAAD/8JkP//AAAAAAAAAAAAAP//ARD///AAAAAAAAAAAAD//wEQ///wAAAAAAAAAAAAAP8BEP/wAAAAAAAAAAAAAP8P8A//D/AAAAAAAAAAAAD//w8PD//wAAAAAAAAAAAA8AD///AA8AAAAAAAAAAAAP//8AD///AAAAAAAAAAAAAP//AA//8AAAAAAAAAAAAAD/8AAA//AAAAAAAAAAAAAAD/AAAP8AAAAAAAAAAAAAAA8AAAAPAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD////////////////4AIAB+AAAAPwAAAH8AAAf/AAAH/4AAD//IAJ//+AD///wB///+A////wf///wB///4AP//8AB//+AAP//gAD//4AA//+AAP//gAD//4AA//+AAP//wIH//8HB///hw///4+P///f3/////////////////w=="
 const drag = "data:image/gif;base64,R0lGODlhIAAgAHAAACH5BAEAAAMALAAAAAAgACAAgQAAAP///xoaGgAAAAKRnI8wigvcYnwugQANlTyF/ygP1h3UtnzqCJbmYqry1bqTPNd2Q+Pzbun5dLbTEMfISCChnpOkLLEwoBUm6hJWq1gp9UgsrrRU1O7ZHANjw+aafexmwau3Jl5/k8tOPZ4lt/TXd0ZnRFIIdiGCOGeIGAhnGOlBp5Z4tcdVRMOUNtYoGGYxFtgpNtogsLqz6tpRAAA7"
+const scratch1 = "data:image/x-icon;base64,AAABAAEAICAQAAAAAADoAgAAFgAAACgAAAAgAAAAQAAAAAEABAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAACAAAAAgIAAgAAAAIAAgACAgAAAwMDAAICAgAAAAP8AAP8AAAD//wD/AAAA/wD/AP//AAD///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA///w/wAP8AAP////AAAAAAD/8P/w//D/AAAAAAAAAAD///D/8P/w//8AAAAAAAAA//8A//D/8A//8AAAAAAAAA/wD//w//8P//AAAAAAAAAAAA//////D///AAAAAAAAAAAP/////w///wAAAAAAAAAAAP////D///8AAAAAAAAP//8A//8AD///AAAAAAAAAPD////w/w///wAAAAAAD///////8PAP//8AAAAAAAAA//8P//8A///wAAAAAAAP//8P8A//AP//AAAAAAAAD///D////wD/8AAAAAAAAP////D///8A8AAAAAAAAA//////D///APAAAAAAAAAP/////////wDwAAAAAAAA//AAD/////8A8AAAAAAAAAAAAA/////wAAAAAAAAAAAAAAAP///wAAAAAAAAAAAAAAAAD///AAAAAAAAAAAAAAAAAA//AAAAAAAAAAAAAAAAAAAPAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD////////////////4AIAB+AAAAPwAAAH8AAA//AAAH/4AAA//IAAP/+AAD/8AAA/8AAAP+AAAD/gAAA/4AAAf+AAAP/gAAH/wAAD/4AAB/+AAAf/AAAH/w4AT//+AP///gP///4H///+H////n////////////////////////w=="
+const scratch2 = "data:image/x-icon;base64,AAABAAEAICAQAAAAAADoAgAAFgAAACgAAAAgAAAAQAAAAAEABAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAACAAAAAgIAAgAAAAIAAgACAgAAAwMDAAICAgAAAAP8AAP8AAAD//wD/AAAA/wD/AP//AAD///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA///w/wAP8AAP////AAAAAAD/8P/w//D/AAAAAAAAAAD///D/8P/w///wAAAAAAAA//8A//D/8A//8AAAAAAAAA/wD//w//8P//8AAAAAAAAAAA//////D///AAAAAAAAAAAP//8ADw///wAAAAAAAAAAAP8A//D///8AAAAAAAAP//8AD///////AAAAAAAAAPD/8AAAD////wAAAAAAD////wD//wD///AAAAAAAAAA////AP8AAAAAAAAAAAAP///w////AAAAAAAAAAAAD////wD///AAAAAAAAAAAA//////D//wAAAAAAAAAAAP////////8AAAAAAAAAAA/////////wAAAAAAAAAAAP//AP////8AAAAAAAAAAAD/8AAP///wAAAAAAAAAAAA/wAAD///AAAAAAAAAAAAAPAAAAD/8AAAAAAAAAAAAAAAAAAA/wAAAAAAAAAAAAAAAAAAAPAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD////////////////4AIAB+AAAAPwAAAH8AAAf/AAAH/4AAA//IAAP/+AAD/8AAA/8AAAP+AAAD/gAAB/4AAA/+AAP//gAB//4AAf/+AAH//AAD//wAA//8GAf//DgP//x8H//+/D////x////+////////////////////////w=="
 
 
 // directional
@@ -78,7 +84,7 @@ nekoDiv.style.userSelect = "none";
 
 // injects the innitial neko sprite
 const nekoSprite = document.createElement("img");
-nekoSprite.src = awake;
+nekoSprite.src = idle;
 nekoSprite.setAttribute("draggable", false);
 nekoDiv.appendChild(nekoSprite);
 document.body.appendChild(nekoDiv);
@@ -150,15 +156,46 @@ function updateSprite(angle) {
   }
   else {
     // probably shouldn't happen, default to natural
-    nekoSprite.src = awake;
+    nekoSprite.src = idle;
     nekoSprite.style.transform = "scaleX(1)";
   }
 }
 
 // idle animations
 // TODO: actually implement the idle animations
-function idle() {
-  nekoSprite.src = awake;
+
+function idleAnimate() {
+  let i = 0;  // animation frame counter
+
+  let currentTime = Date.now();
+  let animPassedTime = currentTime - lastFrameTime;
+
+  isNekoIdle = 1  
+
+  nekoSprite.src = yawn;
+  console.log("currently in idle waiting");
+  let randInt = Math.floor((Math.random() + 1) * 1);
+  console.log("random int is ", randInt)
+    switch(randInt) {
+      case 1: // yawn
+        let intervalId = setInterval(function() {
+          if (i < 6) {
+            nekoSprite.src = frameCounter % 2 == 0 ? yawn : idle;
+            lastFrameTime = Date.now();
+            i++
+            frameCounter++
+          } else {
+            clearInterval(intervalId);
+            isNekoIdle = 0
+          }
+        }, tick); // change frame
+        break
+
+      case 2: // sleep
+        
+
+    } 
+  lastMoveTime = currentTime;
 }
 
 
@@ -176,8 +213,7 @@ function nekoMove() {
     nekoActiveMisc(dist, update, angle);
   }
 
-  
-  if (isNekoDrag == 0) { // stops issue with teleporting after dragging
+  if (isNekoDrag == 0) { // stops issue with snapping back after dragging
     requestAnimationFrame(nekoMove); 
   }
 }
@@ -190,13 +226,15 @@ function getNewPos(angle) {
 }
 
 function nekoActiveMisc(dist, update, angle) {
+  let currentTime = Date.now();
+  let passedTime = currentTime - lastMoveTime;
   if (dist < maxDist) {
     isNekoActive = 0;
   } else {
     isNekoActive = 1;
   }
 
-  if (isNekoActive == 1 && isNekoClicked == 0 && isNekoDrag == 0) {
+  if (isNekoActive == 1 && isNekoClicked == 0 && isNekoDrag == 0 && isNekoIdle == 0) {
     nekoXPos = update.updateX;
     nekoYPos = update.updateY;
     nekoDiv.style.left = nekoXPos + "px";
@@ -204,8 +242,18 @@ function nekoActiveMisc(dist, update, angle) {
     updateSprite(angle);
     lastMoveTime = Date.now();
     frameCounter++;
-  } else {
-    idle();
+  } 
+  else if (passedTime > (tick * 25) && isNekoDrag == 0) {
+    // passedTime = 0; // very bad !!! does not reset counter, causes idleanimate to get called 10k times per second !!!!
+    console.log(currentTime + " " + lastFrameTime)
+    lastMoveTime = currentTime;
+    isNekoIdle = 1;
+    idleAnimate();
+  }
+  else if (isNekoIdle == 0) {
+    nekoSprite.src = idle
+  }
+  else {
   }
 }
 
@@ -222,12 +270,20 @@ function dragNeko(event) {
     }
   }
   if(isNekoDrag) {
+    isNekoClicked = 0 // defaults to sitting after dragging 
+    passedTime = currentTime; // i was hoping this would stop the neko from going idle directly after dragging but it doesn't seem to work
     nekoXPos = event.clientX - 15; // offset by 15 pixels because otherwise its outside the mouses bounding box lol
     nekoYPos = event.clientY - 15;
     nekoDiv.style.left = nekoXPos + "px";
     nekoDiv.style.top = nekoYPos + "px";
     nekoSprite.src = drag; // could probably use the nekoXPos and mouseX to determine which direction it should face
-  }                        // im a bit lazy though
+    if (event.clientX > lastMouseX + (lastMouseX * 0.008)) {
+      nekoSprite.style.transform = 'scaleX(1)';
+    } else if (event.clientX < lastMouseX) {
+      nekoSprite.style.transform = 'scaleX(-1)';
+    }
+    lastMouseX = event.clientX;
+  }                        
 }
 
 document.addEventListener("mousedown", function() {
