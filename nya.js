@@ -1,6 +1,5 @@
 // nya.js ~ javascript neko
 // by tyler / dippio
-// v0.5
 //
 // TODO: actually finish the script - contains core functionality, but not much more
 //       need to implement animations, very boring atm.
@@ -162,15 +161,12 @@ function updateSprite(angle) {
 }
 
 // idle animations
-// TODO: actually implement the idle animations
 
 function idleAnimate() {
   let i = 0;  // animation frame counter
 
   let currentTime = Date.now();
-  let animPassedTime = currentTime - lastFrameTime;
-
-  isNekoIdle = 1  
+  isNekoIdle = 1;
 
   nekoSprite.src = yawn;
   console.log("currently in idle waiting");
@@ -179,7 +175,7 @@ function idleAnimate() {
     switch(randInt) {
       case 1: // yawn
         let intervalId = setInterval(function() {
-          if (i < 6) {
+          if (i < 6 && isNekoActive == 0 && isNekoDrag == 0) {
             nekoSprite.src = frameCounter % 2 == 0 ? yawn : idle;
             lastFrameTime = Date.now();
             i++
@@ -243,8 +239,7 @@ function nekoActiveMisc(dist, update, angle) {
     lastMoveTime = Date.now();
     frameCounter++;
   } 
-  else if (passedTime > (tick * 25) && isNekoDrag == 0) {
-    // passedTime = 0; // very bad !!! does not reset counter, causes idleanimate to get called 10k times per second !!!!
+  else if (passedTime > (tick * 20) && isNekoDrag == 0) {
     console.log(currentTime + " " + lastFrameTime)
     lastMoveTime = currentTime;
     isNekoIdle = 1;
@@ -271,13 +266,13 @@ function dragNeko(event) {
   }
   if(isNekoDrag) {
     isNekoClicked = 0 // defaults to sitting after dragging 
-    passedTime = currentTime; // i was hoping this would stop the neko from going idle directly after dragging but it doesn't seem to work
+    lastMoveTime = Date.now();
     nekoXPos = event.clientX - 15; // offset by 15 pixels because otherwise its outside the mouses bounding box lol
     nekoYPos = event.clientY - 15;
     nekoDiv.style.left = nekoXPos + "px";
     nekoDiv.style.top = nekoYPos + "px";
     nekoSprite.src = drag; // could probably use the nekoXPos and mouseX to determine which direction it should face
-    if (event.clientX > lastMouseX + (lastMouseX * 0.008)) {
+    if (event.clientX > lastMouseX + (lastMouseX * 0.009)) {
       nekoSprite.style.transform = 'scaleX(1)';
     } else if (event.clientX < lastMouseX) {
       nekoSprite.style.transform = 'scaleX(-1)';
