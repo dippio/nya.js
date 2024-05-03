@@ -7,6 +7,7 @@
 //       reimplement neko98s footprint feature, and maybe the ZZz's in onekos sleep animation? 
 //       maybe fully implement awaken function? i don't like that behavior very much though so idk (togglable?)
 //       in terms of quality, this script kinda sucks. really bad. maybe i'll fix it one day
+//       mode where the cat can run around without input from the user (like neko98s pace mode)
 
 
 
@@ -29,6 +30,9 @@ let nekoXPos = window.innerWidth / 2; // middle of screen for testing purposes
 let nekoYPos = window.innerHeight / 2;
 
 
+// defines whether neko is active by default
+var isNekoActive = 1;
+
 
 // optional features, may(?) impact performance
 // set 1 for true / enabled, 0 for false / disabled
@@ -41,7 +45,6 @@ let mouseX;
 let mouseY;
 let lastMouseX; 
 
-var isNekoActive = 1;
 var isNekoClicked = 0;
 var isNekoDrag = 0;
 var isNekoIdle = 0;
@@ -179,7 +182,7 @@ function updateSprite(angle) {
     nekoSprite.style.transform = "scaleX(1)";
   }
   else {
-    // probably shouldn't happen, default to natural
+    // probably shouldn't happen
     nekoSprite.src = idle;
     nekoSprite.style.transform = "scaleX(1)";
   }
@@ -286,7 +289,7 @@ function nekoActiveMisc(dist, update, angle) {  // why is this the function that
 }
 
 
-// the most popular web implementation of neko doesn't have this for some reason lol
+// the only thing that sets this apart from the 50 other neko web implementations lol
 function dragNeko(event) {
   if(isMouseDown) {
     let boundBox = nekoDiv.getBoundingClientRect();
