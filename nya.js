@@ -4,11 +4,8 @@
 // this is my first js project so don't be too harsh qwq
 //
 // TODO: actually finish the script
-//       reimplement neko98s footprint feature, and maybe the ZZz's in onekos sleep animation? 
-//       maybe fully implement awaken function? i don't like that behavior very much though so idk (togglable?)
 //       in terms of quality, this script kinda sucks. really bad. maybe i'll fix it one day
 //       mode where the cat can run around without input from the user (like neko98s pace mode)
-//       doesn't wory particually well on mobile
 
 
 
@@ -35,8 +32,9 @@ var isNekoClicked = 0;
 
 // optional features, may(?) impact performance
 // set 1 for true / enabled, 0 for false / disabled
-let footprints = 0; // doesn't do anything yet  
 
+let isFootprintEnabled = 0; // footprints behind neko that fade over time (very resource heavy, very broken. it's disabled for a reason)
+let isSnoreEnabled = 1;  // symbols to show the cat is snoring (?)
 
 
 // assign variables now to prevent issues later
@@ -87,9 +85,10 @@ const downRight2 = "data:image/png;base64,AAABAAEAICAQAAAAAADoAgAAFgAAACgAAAAgAA
 const down1 = "data:image/png;base64,AAABAAEAICAQAAAAAADoAgAAFgAAACgAAAAgAAAAQAAAAAEABAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAACAAAAAgIAAgAAAAIAAgACAgAAAwMDAAICAgAAAAP8AAP8AAAD//wD/AAAA/wD/AP//AAD///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//AAAAAAAAAAAAAAAAAP/////wAAAAAAAAAAAA/w///w///w/wAAAAAAAAAPD/8P//8P/w8AAAAAAAAPAA//D///D/8ADwAAAAAAD/AP/w///w//AP8AAAAAAAAPD////////w8AAAAAAAAA/w////////8P8AAAAAAAAP8P////////D/AAAAAAAAD/D///AA///w/wAAAAAAAA//D//w8P//D/8AAAAAAAAP/w//D/8P/w//AAAAAAAAD//w/w//D/D//wAAAAAAAAD/8PD///Dw//AAAAAAAAAA//8P////D//wAAAAAAAAAP//////////AAAAAAAAAAAP////////8AAAAAAAAAAAAP///////wAAAAAAAAAAAAAP//////AAAAAAAAAAAAAAAAAP8AAAAAAAAAAAAAAAAAAAD/AAAAAAAAAAAAAAAAAAAA/wAAAAAAAAAAAAAAAAAAAP8AAAAAAAAAAAAAAAAAAAD/AAAAAAAAAAAAAAAAAAAA/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD////////////////////////////8H///wAH//wAAf/4AAD/4AAAP+AAAD/gAAA/8AAAf+AAAD/wAAB/8AAAf/AAAH/wAAB/8AAAf/gAAP/4AAD/+AAB//wAA//+AAf//wAP//+AH///8P////D////w////8P////D////5//w=="
 const down2 = "data:image/png;base64,AAABAAEAICAQAAAAAADoAgAAFgAAACgAAAAgAAAAQAAAAAEABAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAACAAAAAgIAAgAAAAIAAgACAgAAAwMDAAICAgAAAAP8AAP8AAAD//wD/AAAA/wD/AP//AAD///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAAADwAAAAAAAAAAAAAP8AAAAP8AAAAAAAAAAAAAD/AAAAD/AAAAAAAAAAAAAP//AAAP//AAAAAAAAAAAAD/AA//AA/wAAAAAAAAAAAA8P/////w8AAAAAAAAAAAAA///w///wAAAAAAAAAAAAD/8P//8P/wAAAAAAAAAAAA//D///D/8AAAAAAAAAAAAP/w///w//AAAAAAAAAAAAD////////wAAAAAAAAAAAA////////8AAAAAAAAAAAAP////////AAAAAAAAAAAAD///AA///wAAAAAAAAAAAPD//w8P//DwAAAAAAAAAADw//D/8P/w8AAAAAAAAAAA/w/w//D/D/AAAAAAAAAAAP8PD///Dw/wAAAAAAAAAAAP8P////D/AAAAAAAAAAAAD////////wAAAAAAAAAAAP/////////wAAAAAAAAAAD/////////8AAAAAAAAAAA//////////AAAAAAAAAAAP/////////wAAAAAAAAAAD//wD/AP//8AAAAAAAAAAA//8A/wAP//AAAAAAAAAAAA/wAP8AAP8AAAAAAAAAAAAP8AD/AAD/AAAAAAAAAAAADwAA/wAADwAAAAAAAAAAAAAAAAAAAAAAAAAAD//////+fz///D4f//w+H//8Ph//+AAP//gAD//4AA//+AAP//gAD//wAAf/8AAH/+AAA/+QAAT/8AAH//AAB//wAAf/8AAH//AAB//wAAf/+AAP//gAD//wAAf/8AAH//AAB//wAAf/8AAH//ACB//4Qw//+EMP//hDD//855/w=="
 
+// misc
 
-
-
+const ZZz = "data:image/gif;base64,R0lGODlhDwAIAHAAACH5BAEAAAEALAAAAAAPAAgAgQAAAAAAAAAAAAAAAAIUhA+hy5vd0oORQhlRmFYiU1kOUgAAOw=="
+const footprintStraight = "data:image/gif;base64,R0lGODlhCQAIAHAAACH5BAEAAAEALAAAAAAJAAgAgQAAAAAAAAAAAAAAAAIRjANnCY3oWFTvtKSus5reUwAAOw=="
 
 
 
@@ -99,7 +98,8 @@ const down2 = "data:image/png;base64,AAABAAEAICAQAAAAAADoAgAAFgAAACgAAAAgAAAAQAA
 
 const nekoDiv = document.createElement("div");
 nekoDiv.id = "nekoDiv";
-nekoDiv.style.position = 'fixed';
+nekoDiv.style.position = "fixed";
+nekoDiv.style.zIndex = 2
 nekoDiv.setAttribute("draggable", false); // stops transparent duplicate when dragging
 nekoDiv.style.left = nekoXPos;
 nekoDiv.style.top = nekoYPos;
@@ -201,16 +201,28 @@ function idleAnimate() {
 
   let animationFrames;
   let maxFrames;
+  let snoreIntervalId;
 
   switch(randInt) {
     case 1: // yawn
       animationFrames = [yawn, idle];
       maxFrames = 6;
       break;
+
     case 2: // sleep
       animationFrames = [sleep1, sleep2];
       maxFrames = 100;
+      
+      let snoreTick = 0;
+      snoreIntervalId = setInterval(function() {
+        if (snoreTick % 10 === 0) {
+          snore();
+        }
+        snoreTick++;
+      }, tick);
+
       break;
+
     case 3: // scratch
       animationFrames = [scratch1, scratch2];
       maxFrames = 10;
@@ -224,10 +236,77 @@ function idleAnimate() {
       i++
     } else {
       clearInterval(intervalId);
+      clearInterval(snoreIntervalId);
       isNekoIdle = 0
     }
   }, tick); // change frame
 }
+
+function snore() {
+  if (isSnoreEnabled == 1) {
+    let opacity = 1.15; // initialize opacity
+    let snoreSprite = document.createElement("img"); // create new img element for snore
+    snoreSprite.src = ZZz
+    snoreSprite.style.position = "fixed";
+    snoreSprite.style.opacity = opacity;
+
+    nekoSprite.parentNode.appendChild(snoreSprite);
+
+    let snoreInterval = setInterval(function() {
+      if (opacity > 0) {
+        opacity -= 0.20;
+        snoreSprite.style.opacity = opacity;
+      } else {
+        clearInterval(snoreInterval);
+        snoreSprite.parentNode.removeChild(snoreSprite);
+        opacity = 1.15;
+      }
+    }, tick);
+  }
+}
+
+function footprintPrint(angle) {
+  isFootprintEnabled = 1;
+  if (isFootprintEnabled == 1 && isNekoActive == 1 && isNekoDrag == 0 && isNekoIdle == 0) {
+    let opacity = 2;
+    let footprintSprite = document.createElement("img");
+    footprintSprite.style.position = "fixed";
+    footprintSprite.style.opacity = opacity;
+    footprintSprite.src = footprintStraight;
+    footprintSprite.style.transform = "rotate(" + (angle * (180 / Math.PI) + 90) + "deg)";
+
+    // Get the position of the cat
+    let rect = nekoSprite.getBoundingClientRect();
+
+    // Set the position of the footprint to the current position of the cat
+    footprintSprite.style.left = rect.left + 15 + 'px';
+    footprintSprite.style.top = rect.top + 15 + 'px';
+
+    // Check if footprintDiv exists, if not create it
+    let footprintDiv = document.getElementById('footprintDiv');
+    if (!footprintDiv) {
+      footprintDiv = document.createElement('div');
+      footprintDiv.id = 'footprintDiv';
+      document.body.appendChild(footprintDiv);
+    }
+
+    // Append the footprint to the footprintDiv instead of the body
+    footprintDiv.appendChild(footprintSprite);
+
+    let footprintInterval = setInterval(function() {
+      if (opacity > 0) {
+        opacity -= 0.25;
+        footprintSprite.style.opacity = opacity;
+      } else {
+        clearInterval(footprintInterval);
+        footprintDiv.removeChild(footprintSprite);
+        opacity = 2.5;
+      }
+    }, tick);
+  }
+}
+
+
 
 
 
@@ -242,6 +321,7 @@ function nekoMove() {              // worst function name of all time (doesn't e
     let update = getNewPos(angle);
     let dist = getDist(mouseX, mouseY);
     nekoActiveMisc(dist, update, angle);
+    footprintPrint(angle);
   }
 
   if (isNekoDrag == 0) { // stops issue with snapping back after dragging
