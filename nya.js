@@ -1,9 +1,7 @@
 // nya.js ~ javascript neko
 // by tyler / dippio (github.com/dippio)
 //
-// this is my first js project so don't be too harsh qwq
-//
-// in terms of quality, this script kinda sucks. really bad. maybe i'll fix it one day
+// this script kinda sucks. really bad. maybe i'll fix it one day
 
 
 
@@ -16,6 +14,7 @@
 // they make neko more fun!
 
 // movement stuff
+
 let nekoSpeed = 16; // 16 pixels per tick i think
 let tick = 250;     // all movements occur every 250ms(?) somewhere between 220 - 280 seems to be nice
 let maxDist = 32;   // max distance before the cat starts trying to chase the cursor again
@@ -31,8 +30,11 @@ var isNekoClicked = 0;
 // optional features, may(?) impact performance
 // set 1 for true / enabled, 0 for false / disabled
 
-let isFootprintEnabled = 0; // footprints behind neko that fade over time (very resource heavy, very intrusive, very broken. it's disabled by default for a reason)
-let isSnoreEnabled = 1;  // silly little Zzz symbols to indicate sleep
+let isFootprintEnabled = 0; // footprints behind neko that fade over time (very resource heavy, very intrusive, very broken.)
+                            // if you care about the memory / CPU impact of your site, keep this off.
+                            // it's disabled by default for a reason :p
+
+let isSnoreEnabled = 1;     // silly little Zzz symbols to indicate sleep
 
 
 // assign variables now to prevent issues later
@@ -196,8 +198,6 @@ function idleAnimate() {
 
   nekoSprite.src = idle;                              // injects an aditional frame, not sure why i added this in the first place
   let randInt = Math.floor((Math.random()) * 3);      // i know there was a reason though and now i'm too scared to remove it
-
-  console.log(randInt)
 
   let animationFrames;
   let maxFrames;
